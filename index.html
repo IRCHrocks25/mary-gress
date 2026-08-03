@@ -341,7 +341,7 @@ nav {
   cursor: grab;
   padding: 4px 0 20px;
   user-select: none;
-  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 .problem-track.grabbing { cursor: grabbing; }
 
@@ -1524,6 +1524,44 @@ footer {
     idx = Math.max(0, Math.min(idx, cards.length - 1));
     if (idx !== current) { current = idx; dots.forEach(function(d,i){ d.classList.toggle('active', i===current); }); }
   });
+
+  /* touch drag */
+  var touchActive = false, touchStartX = 0, touchStartY = 0, touchStartOffset = 0, touchIsHorizontal = null;
+  track.addEventListener('touchstart', function(e){
+    touchActive = true;
+    touchIsHorizontal = null;
+    touchStartX = e.touches[0].pageX;
+    touchStartY = e.touches[0].pageY;
+    touchStartOffset = current * cardWidth();
+    track.style.transition = 'none';
+  }, { passive: true });
+
+  track.addEventListener('touchmove', function(e){
+    if (!touchActive) return;
+    var dx = touchStartX - e.touches[0].pageX;
+    var dy = touchStartY - e.touches[0].pageY;
+
+    if (touchIsHorizontal === null) {
+      touchIsHorizontal = Math.abs(dx) > Math.abs(dy);
+    }
+    if (!touchIsHorizontal) return;
+
+    e.preventDefault();
+    var raw = touchStartOffset + dx;
+    track.style.transform = 'translateX(-' + raw + 'px)';
+    var idx = Math.round(raw / cardWidth());
+    idx = Math.max(0, Math.min(idx, cards.length - 1));
+    if (idx !== current) { current = idx; dots.forEach(function(d,i){ d.classList.toggle('active', i===current); }); }
+  }, { passive: false });
+
+  function touchEnd(){
+    if (!touchActive) return;
+    touchActive = false;
+    track.style.transition = 'transform 0.45s cubic-bezier(0.25,0.46,0.45,0.94)';
+    goTo(current);
+  }
+  track.addEventListener('touchend', touchEnd);
+  track.addEventListener('touchcancel', touchEnd);
 })();
 </script>
 
