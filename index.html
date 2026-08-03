@@ -81,6 +81,53 @@ nav {
 }
 .nav-cta:hover { background: var(--plum-mid); transform: translateY(-1px); }
 
+.nav-right { display: flex; align-items: center; gap: 20px; }
+
+.nav-hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 32px; height: 32px;
+  background: none; border: none; cursor: pointer;
+  padding: 0; flex-shrink: 0;
+}
+.nav-hamburger span {
+  display: block; width: 100%; height: 2px;
+  background: var(--ink);
+  transition: transform .3s ease, opacity .3s ease;
+}
+.nav-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav-hamburger.open span:nth-child(2) { opacity: 0; }
+.nav-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+@media(max-width:1024px) {
+  .nav-links {
+    position: absolute;
+    top: 100%; left: 0; right: 0;
+    background: var(--white);
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height .4s ease;
+    border-bottom: 1px solid var(--border-lt);
+    box-shadow: 0 16px 32px rgba(30,16,40,.08);
+    z-index: 199;
+  }
+  .nav-links.open { max-height: 420px; }
+  .nav-links li { width: 100%; }
+  .nav-links a {
+    display: block;
+    width: 100%;
+    padding: 16px 32px;
+    border-bottom: 1px solid var(--border-lt);
+  }
+  .nav-hamburger { display: flex; }
+}
+
 /* ─── HERO — full-bleed centered ─── */
 #hero {
   position: relative;
@@ -1142,7 +1189,6 @@ footer {
   /* ── NAV ── */
   nav { padding: 0 20px; height: 60px; }
   .nav-logo { height: 32px; }
-  .nav-links { display: none; }
   .nav-cta { padding: 10px 16px; font-size: .72rem; letter-spacing: .06em; }
 
   /* ── HERO ── */
@@ -1276,15 +1322,47 @@ footer {
   <a href="#" class="nav-brand">
     <img src="https://res.cloudinary.com/dcuswyfur/image/upload/v1775163936/logomarygress_wt32i0.png" alt="MEG Applied Intelligence Consulting" class="nav-logo" />
   </a>
-  <ul class="nav-links">
+  <ul class="nav-links" id="navLinks">
     <li><a href="#credibility">About</a></li>
     <li><a href="#framework">A.R.T. Framework</a></li>
     <li><a href="#services">Services</a></li>
     <li><a href="#proof">Results</a></li>
     <li><a href="#about">Mary Gress</a></li>
   </ul>
-  <button class="nav-cta" onclick="document.getElementById('cta').scrollIntoView({behavior:'smooth'})">Book Your Clarity Call</button>
+  <div class="nav-right">
+    <button type="button" class="nav-cta" onclick="document.getElementById('cta').scrollIntoView({behavior:'smooth'})">Book Your Clarity Call</button>
+    <button type="button" class="nav-hamburger" id="navHamburger" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
 </nav>
+
+<script>
+(function(){
+  var hamburger = document.getElementById('navHamburger');
+  var navLinks  = document.getElementById('navLinks');
+
+  function closeMenu(){
+    navLinks.classList.remove('open');
+    hamburger.classList.remove('open');
+    hamburger.setAttribute('aria-expanded', 'false');
+  }
+
+  hamburger.addEventListener('click', function(){
+    var isOpen = navLinks.classList.toggle('open');
+    hamburger.classList.toggle('open', isOpen);
+    hamburger.setAttribute('aria-expanded', String(isOpen));
+  });
+
+  navLinks.querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click', closeMenu);
+  });
+
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') closeMenu();
+  });
+})();
+</script>
 
 <!-- HERO — full-bleed centered -->
 <section id="hero">
@@ -2050,7 +2128,7 @@ footer {
 
     <p class="cta-promise">You will leave knowing exactly where your team stands, what is blocking progress, and what your clearest next step is.</p>
 
-    <a href="/cdn-cgi/l/email-protection#f29f93808bb29f97959382829e9b97969b9c86979e9e9b95979c9197919d9c81879e869b9c95dc919d9f" class="btn-plum">Book Your Clarity Call</a>
+    <a href="mailto:mary@megappliedintelligenceconsulting.com" class="btn-plum">Book Your Clarity Call</a>
   </div>
   <div class="cta-right rv d1">
   </div>
