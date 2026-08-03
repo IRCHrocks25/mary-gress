@@ -337,16 +337,21 @@ nav {
 .problem-track {
   display: flex;
   gap: 20px;
-  overflow-x: hidden;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
   cursor: grab;
   padding: 4px 0 20px;
   user-select: none;
-  touch-action: pan-y;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
-.problem-track.grabbing { cursor: grabbing; }
+.problem-track::-webkit-scrollbar { display: none; }
+.problem-track.grabbing { cursor: grabbing; scroll-behavior: auto; }
 
 .pc {
   flex: 0 0 320px;
+  scroll-snap-align: start;
   background: rgba(15, 7, 25, 0.72);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -1478,90 +1483,61 @@ footer {
   var dots    = Array.prototype.slice.call(document.querySelectorAll('#probDots .problem-dot'));
   var prev    = document.getElementById('probPrev');
   var next    = document.getElementById('probNext');
-  var current = 0;
 
-  function cardWidth() {
-    return cards[0].offsetWidth + 20; /* card + gap */
+  /* native scroll-snap drives position; JS only requests scroll targets
+     and reflects the resulting scroll position back onto the dots. */
+
+  function cardStep() {
+    return cards[1] ? cards[1].offsetLeft - cards[0].offsetLeft : cards[0].offsetWidth;
+  }
+
+  function currentIndex() {
+    var step = cardStep();
+    return step ? Math.round(track.scrollLeft / step) : 0;
   }
 
   function goTo(idx) {
-    current = Math.max(0, Math.min(idx, cards.length - 1));
-    /* smooth translate via CSS transform — avoids page scroll */
-    var offset = current * cardWidth();
-    track.style.transform = 'translateX(-' + offset + 'px)';
-    dots.forEach(function(d, i){ d.classList.toggle('active', i === current); });
+    idx = Math.max(0, Math.min(idx, cards.length - 1));
+    cards[idx].scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
   }
 
-  /* freeze overflow and use transform instead */
-  track.style.transition = 'transform 0.45s cubic-bezier(0.25,0.46,0.45,0.94)';
+  function syncDots() {
+    var idx = currentIndex();
+    dots.forEach(function(d, i){ d.classList.toggle('active', i === idx); });
+  }
 
-  prev.addEventListener('click', function(){ goTo(current - 1); });
-  next.addEventListener('click', function(){ goTo(current + 1); });
+  prev.addEventListener('click', function(){ goTo(currentIndex() - 1); });
+  next.addEventListener('click', function(){ goTo(currentIndex() + 1); });
   dots.forEach(function(d){
     d.addEventListener('click', function(){ goTo(parseInt(this.dataset.idx)); });
   });
 
-  /* drag */
-  var isDown = false, startX, startOffset;
+  var scrollRaf = null;
+  track.addEventListener('scroll', function(){
+    if (scrollRaf) return;
+    scrollRaf = requestAnimationFrame(function(){ syncDots(); scrollRaf = null; });
+  }, { passive: true });
+
+  window.addEventListener('resize', syncDots);
+
+  /* desktop mouse-drag-to-scroll (native overflow already covers touch/trackpad) */
+  var isDown = false, startX, startScrollLeft;
   track.addEventListener('mousedown', function(e){
     isDown = true; track.classList.add('grabbing');
     startX = e.pageX;
-    startOffset = current * cardWidth();
-    track.style.transition = 'none';
+    startScrollLeft = track.scrollLeft;
   });
   document.addEventListener('mouseup', function(){
     if (!isDown) return;
     isDown = false; track.classList.remove('grabbing');
-    track.style.transition = 'transform 0.45s cubic-bezier(0.25,0.46,0.45,0.94)';
-    goTo(current);
+    goTo(currentIndex());
   });
   document.addEventListener('mousemove', function(e){
     if (!isDown) return;
-    var dx = startX - e.pageX;
-    var raw = startOffset + dx;
-    track.style.transform = 'translateX(-' + raw + 'px)';
-    var idx = Math.round(raw / cardWidth());
-    idx = Math.max(0, Math.min(idx, cards.length - 1));
-    if (idx !== current) { current = idx; dots.forEach(function(d,i){ d.classList.toggle('active', i===current); }); }
+    track.scrollLeft = startScrollLeft + (startX - e.pageX);
   });
 
-  /* touch drag */
-  var touchActive = false, touchStartX = 0, touchStartY = 0, touchStartOffset = 0, touchIsHorizontal = null;
-  track.addEventListener('touchstart', function(e){
-    touchActive = true;
-    touchIsHorizontal = null;
-    touchStartX = e.touches[0].pageX;
-    touchStartY = e.touches[0].pageY;
-    touchStartOffset = current * cardWidth();
-    track.style.transition = 'none';
-  }, { passive: true });
-
-  track.addEventListener('touchmove', function(e){
-    if (!touchActive) return;
-    var dx = touchStartX - e.touches[0].pageX;
-    var dy = touchStartY - e.touches[0].pageY;
-
-    if (touchIsHorizontal === null) {
-      touchIsHorizontal = Math.abs(dx) > Math.abs(dy);
-    }
-    if (!touchIsHorizontal) return;
-
-    e.preventDefault();
-    var raw = touchStartOffset + dx;
-    track.style.transform = 'translateX(-' + raw + 'px)';
-    var idx = Math.round(raw / cardWidth());
-    idx = Math.max(0, Math.min(idx, cards.length - 1));
-    if (idx !== current) { current = idx; dots.forEach(function(d,i){ d.classList.toggle('active', i===current); }); }
-  }, { passive: false });
-
-  function touchEnd(){
-    if (!touchActive) return;
-    touchActive = false;
-    track.style.transition = 'transform 0.45s cubic-bezier(0.25,0.46,0.45,0.94)';
-    goTo(current);
-  }
-  track.addEventListener('touchend', touchEnd);
-  track.addEventListener('touchcancel', touchEnd);
+  syncDots();
 })();
 </script>
 
