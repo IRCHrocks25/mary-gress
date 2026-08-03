@@ -1483,42 +1483,57 @@ footer {
   var dots    = Array.prototype.slice.call(document.querySelectorAll('#probDots .problem-dot'));
   var prev    = document.getElementById('probPrev');
   var next    = document.getElementById('probNext');
+  var len     = cards.length;
 
-  /* native scroll-snap drives position; JS only requests scroll targets
-     and reflects the resulting scroll position back onto the dots. */
+  /* native scroll-snap drives position while dragging/swiping; button and
+     dot clicks track a requested index directly so Next/Prev can loop even
+     when the last card or two can't fully reach the left edge (there's not
+     enough trailing content for the browser to scroll that far). */
+  var requestedIndex = 0;
+  var suppressUntil  = 0;
 
-  function cardStep() {
-    return cards[1] ? cards[1].offsetLeft - cards[0].offsetLeft : cards[0].offsetWidth;
+  function nearestIndex() {
+    var scrollLeft = track.scrollLeft;
+    var best = 0, bestDiff = Infinity;
+    cards.forEach(function(c, i){
+      var diff = Math.abs(c.offsetLeft - scrollLeft);
+      if (diff < bestDiff) { bestDiff = diff; best = i; }
+    });
+    return best;
   }
 
-  function currentIndex() {
-    var step = cardStep();
-    return step ? Math.round(track.scrollLeft / step) : 0;
-  }
-
-  function goTo(idx) {
-    idx = Math.max(0, Math.min(idx, cards.length - 1));
-    cards[idx].scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
-  }
-
-  function syncDots() {
-    var idx = currentIndex();
+  function syncDots(idx) {
     dots.forEach(function(d, i){ d.classList.toggle('active', i === idx); });
   }
 
-  prev.addEventListener('click', function(){ goTo(currentIndex() - 1); });
-  next.addEventListener('click', function(){ goTo(currentIndex() + 1); });
+  function goTo(idx) {
+    var looped = false;
+    if (idx >= len) { idx = 0; looped = true; }
+    else if (idx < 0) { idx = len - 1; looped = true; }
+    requestedIndex = idx;
+    syncDots(idx);
+    suppressUntil = Date.now() + 700;
+    cards[idx].scrollIntoView({ behavior: looped ? 'auto' : 'smooth', inline: 'start', block: 'nearest' });
+  }
+
+  prev.addEventListener('click', function(){ goTo(requestedIndex - 1); });
+  next.addEventListener('click', function(){ goTo(requestedIndex + 1); });
   dots.forEach(function(d){
     d.addEventListener('click', function(){ goTo(parseInt(this.dataset.idx)); });
   });
 
   var scrollRaf = null;
   track.addEventListener('scroll', function(){
+    if (Date.now() < suppressUntil) return;
     if (scrollRaf) return;
-    scrollRaf = requestAnimationFrame(function(){ syncDots(); scrollRaf = null; });
+    scrollRaf = requestAnimationFrame(function(){
+      requestedIndex = nearestIndex();
+      syncDots(requestedIndex);
+      scrollRaf = null;
+    });
   }, { passive: true });
 
-  window.addEventListener('resize', syncDots);
+  window.addEventListener('resize', function(){ syncDots(nearestIndex()); });
 
   /* desktop mouse-drag-to-scroll (native overflow already covers touch/trackpad) */
   var isDown = false, startX, startScrollLeft;
@@ -1526,18 +1541,19 @@ footer {
     isDown = true; track.classList.add('grabbing');
     startX = e.pageX;
     startScrollLeft = track.scrollLeft;
+    suppressUntil = 0;
   });
   document.addEventListener('mouseup', function(){
     if (!isDown) return;
     isDown = false; track.classList.remove('grabbing');
-    goTo(currentIndex());
+    goTo(nearestIndex());
   });
   document.addEventListener('mousemove', function(e){
     if (!isDown) return;
     track.scrollLeft = startScrollLeft + (startX - e.pageX);
   });
 
-  syncDots();
+  syncDots(0);
 })();
 </script>
 
