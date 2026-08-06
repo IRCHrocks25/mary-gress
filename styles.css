@@ -134,7 +134,7 @@ nav {
 #hero::before {
   content: '';
   position: absolute; inset: 0;
-  background: url('https://res.cloudinary.com/dcuswyfur/image/upload/v1775148017/MARY_GRESS_HERO_hsznvn.png') center center / cover no-repeat;
+  background: url('https://cdn.katalyst-crm.com/t1/cloudinary/MARY_GRESS_HERO_hsznvn.png') center center / cover no-repeat;
   opacity: 0.38;
   z-index: 0;
 }
@@ -307,7 +307,7 @@ nav {
 #problem::before {
   content: '';
   position: absolute; inset: 0;
-  background: url('https://res.cloudinary.com/dcuswyfur/image/upload/v1780490690/ChatGPT_Image_3_Haz_2026_15_43_49_jgrhcz.png') center center / cover no-repeat;
+  background: url('https://cdn.katalyst-crm.com/t1/cloudinary/ChatGPT_Image_3_Haz_2026_15_43_49_jgrhcz.png') center center / cover no-repeat;
   opacity: 0.42;
   z-index: 0;
   filter: saturate(1.1) brightness(0.85);
@@ -1048,7 +1048,7 @@ nav {
 #cta::before {
   content: '';
   position: absolute; inset: 0;
-  background: url('https://res.cloudinary.com/dcuswyfur/image/upload/v1775165471/mary_gress9_1_x69du0.png') center center / cover no-repeat;
+  background: url('https://cdn.katalyst-crm.com/t1/cloudinary/mary_gress9_1_x69du0.png') center center / cover no-repeat;
   z-index: 0;
 }
 #cta::after {
