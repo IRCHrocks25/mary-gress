@@ -1252,6 +1252,8 @@ footer {
   .svc-card-body { padding: 24px 20px 28px; }
   .svc-trigger-quote { font-size: 1.08rem; }
   .svc-diagnosis { font-size: .92rem; }
+  .svc-foot { flex-direction: column; align-items: stretch; text-align: center; padding: 28px 24px; gap: 20px; }
+  .svc-foot .btn-plum { text-align: center; }
 
   /* ── APPROACH / OUTCOMES ── */
   #approach { grid-template-columns: 1fr !important; }
